@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Google Maps</title>
+   
+   <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAALxXsfy5Kgg41jPRnyEexXBR5Y8APyQD7LgF1ca-_ZaEGz82jKxRRlc7V50He_cbjbHuuvLtLJk02Yw" type="text/javascript"></script>
+	<script type="text/javascript" language="javascript" src="ajax_json.js"></script>
+	<script type="text/javascript">
+
+	var map = null;				// faut dÃ©clarer une variable globale et l'initialiser avec "null"
+    var geocoder = null; 		// si l'on veut untiliser le geocoder faut dÃ©finir une deuxiÃ¨me variable
+
+    function load() {
+		if(GBrowserIsCompatible()) {
+
+			map = new GMap2(document.getElementById("map"));
+			map.setCenter(new GLatLng(48.857713,2.356911), 11);
+			map.addMapType(G_PHYSICAL_MAP);
+			map.addControl(new GSmallMapControl());
+	        map.addControl(new GMapTypeControl());
+
+    		geocoder = new GClientGeocoder();						// initialisation du geocoder
+		}
+	}
+	
+	function envoyer_contenu(){
+	
+		var contenu = document.getElementById("chmap_texte").value;
+		alert(contenu);
+		var requette = new AjaxRequest("api_calais.php?text="+contenu, "parser_json");
+	}
+		
+	function parser_json(_json){
+	
+		var adresse = "";
+		for (var i in _json) {
+			for (var j = 0; j < _json[i].length; j++) {
+				var address = _json[i][j];
+				alert(address);
+				if (geocoder) {
+					geocoder.getLatLng(address, function(point){
+						if (!point) {
+							alert(address + " not found");
+						}
+						else { // ici on met des actions
+							alert(address + " found");
+							map.setCenter(point, 14); // "point" contient la reponse du geocoder
+							var marker = new GMarker(point);
+							map.addOverlay(marker);
+							marker.openInfoWindowHtml("<strong><i>" + address + "</i></strong>");
+						}
+					});
+				}
+			}
+		}
+	}
+   	//->
+	</script>
+</head>
+<body onload="load();" onunload="GUnload();">
+
+<form action="#" onsubmit="envoyer_contenu(); return false">
+
+	<p>
+		<TEXTAREA cols="60" rows="8" wrap="off"  id="chmap_texte"></TEXTAREA>
+		<input type="submit" value="Go!" />
+	</p>
+</form>
+
+<div id="map" style="width:500px;height:300px"></div>
+
+</body>
+</html>
