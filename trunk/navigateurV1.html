@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Navigateur spatio-temporel</title>
+		<style>
+			#timeline {
+				border: 1px solid black;
+				width: 100%;
+				height:200px;
+				
+			}
+			#googlemaps{
+				border: 1px solid black;
+				width: 100%;
+				height:500px;
+				
+			}
+		
+		</style>
+		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAALxXsfy5Kgg41jPRnyEexXBR5Y8APyQD7LgF1ca-_ZaEGz82jKxRRlc7V50He_cbjbHuuvLtLJk02Yw" type="text/javascript"></script>
+		<script type="text/javascript" language="JavaScript" src="js/Timeline/api/timeline-api.js"></script>
+		<script type="text/javascript" language="JavaScript" src="js/ajax_json.js"></script>
+		<script type="text/javascript" language="JavaScript">
+			
+			
+				    
+        function onLoad(){
+        
+            var query = new AjaxRequest("php/getDataJson.php", "paserJson");
+            
+        }
+        
+        function paserJson(data_json){
+        
+            loadTimeline("timeline", data_json);
+            //loadGooglemaps();
+        }
+        
+        function loadTimeline(elemntdiv, data_json){
+        
+        
+            var eventSource = new Timeline.DefaultEventSource();
+            //  data_json['events'].length
+            for (var i = 0; i < 3; i++) {
+                var dateEvent = new Date();
+                var sec = data_json['events'][i]['start'];
+                dateEvent.setTime(sec * 1000);
+                var evt = new Timeline.DefaultEventSource.Event(dateEvent, dateEvent, dateEvent, dateEvent, true, //instant
+                data_json['events'][i]['title'], //text
+                data_json['events'][i]['description'], //description
+                data_json['events'][i]['image'], data_json['events'][i]['link'], data_json['events'][i]['icon']);
+                eventSource.add(evt);
+                getEntites(data_json['events'][i]['description']);
+            }
+            
+            var bandInfos = [Timeline.createBandInfo({
+                trackGap: 0.2,
+                trackHeight: 1.2,
+                width: "85%",
+                intervalUnit: Timeline.DateTime.HOUR,
+                intervalPixels: 50,
+                eventSource: eventSource
+            }), Timeline.createBandInfo({
+                showEventText: false,
+                trackHeight: 0.5,
+                trackGap: 0.2,
+                width: "15%",
+                intervalUnit: Timeline.DateTime.DAY,
+                intervalPixels: 100,
+                eventSource: eventSource
+            })];
+            bandInfos[1].syncWith = 0;
+            bandInfos[1].highlight = true;
+            tl = Timeline.create(document.getElementById(elemntdiv), bandInfos, 0);
+        }
+        
+        function loadGooglemaps(_json){
+        
+        
+            if (GBrowserIsCompatible()) {
+                map = new GMap2(document.getElementById("googlemaps"));
+                map.addControl(new GLargeMapControl());
+                map.setCenter(new GLatLng(48.25, 11.00), 4);
+                map.enableDoubleClickZoom();
+                geocoder = new GClientGeocoder();
+                //var mgr = new GMarkerManager(map);
+                
+                
+                var markers = [];
+                var adresse = "";
+                for (var i in _json) {
+                    for (var j = 0; j < _json[i].length; j++) {
+                        var address = _json[i][j];
+                        
+                        if (geocoder) {
+                            geocoder.getLatLng(address, function(point){
+                            
+                                if (!point) {
+                                    alert(address + " not found");
+                                }
+                                else { // ici on met des actions
+                                    //markers.push(new GMarker(point));
+									map.setCenter(point, 14); // "point" contient la reponse du geocoder
+							var marker = new GMarker(point);
+							map.addOverlay(marker);
+							marker.openInfoWindowHtml("<strong><i>" + address + "</i></strong>");
+                                }
+                            });
+                        }
+                    }
+                }
+				//mgr.addMarkers(markers,10);
+				//mgr.refresh();
+            }
+        }
+        
+        function getEntites(contenu){
+        
+            var requette = new AjaxRequest("php/api_calais.php?text=" + contenu, "loadGooglemaps");
+        }
+		</script>
+	</head>
+	
+	<body onload="onLoad()">
+	<div id="options">
+		
+	</div>
+	<div id="timeline">
+		
+	</div>
+	<div id="googlemaps">
+		
+	</div>
+	<div id="affichage">
+		
+	</div>
+	
+	</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Navigateur spatio-temporel</title>
+		<style>
+			#timeline {
+				border: 1px solid black;
+				width: 100%;
+				height:200px;
+			}
+			
+			#googlemaps{
+				border: 1px solid black;
+				width: 80%;
+				height:500px;
+				float:right;
+			}
+			#person {
+				border: 1px solid black;
+				width: 20%;
+				height:500px;
+				
+			}
+
+		
+		</style>
+		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAALxXsfy5Kgg41jPRnyEexXBR5Y8APyQD7LgF1ca-_ZaEGz82jKxRRlc7V50He_cbjbHuuvLtLJk02Yw" type="text/javascript"></script>
+		<script src="http://gmaps-utility-library.googlecode.com/svn/trunk/markermanager/release/src/markermanager.js"></script>
+		<script type="text/javascript" language="JavaScript" src="js/Timeline/api/timeline-api.js"></script>
+		<script type="text/javascript" language="JavaScript" src="js/ajax_json.js"></script>
+		<script type="text/javascript" language="JavaScript">
+		
+		var markers = new Array;
+		var mgr = null;
+		var map = null;
+		var bandInfos = null;
+		var eventSource = null;
+		var _html="";
+		
+		var center = new GLatLng(48.857713,2.356911);			// centrer la carte sur Paris
+        function Init(){
+        
+            // chargement du Timeline
+           
+			   
+            
+            /* chargement de google maps */
+			
+            if (GBrowserIsCompatible()) {
+            
+                map = new GMap2(document.getElementById("googlemaps"));
+                map.setCenter(new GLatLng(48.25, 11.00), 3);
+				map.addControl(new GLargeMapControl());
+                geocoder = new GClientGeocoder();
+                mgr = new MarkerManager(map); // initialisation du marker manager
+            }
+			/* chargement des evenements (timeline) */
+			loadEvents();
+        }
+			    
+        function loadEvents(){
+        
+            var query = new AjaxRequest("php/getDataJson.php", "loadTimeEventsParse");
+            
+        }
+        
+        function loadTimeEventsParse(data_json){
+		
+			//  data_json['events'].length
+			    eventSource = new Timeline.DefaultEventSource();
+				
+			for (var i = 0; i < 10 ; i++) {
+				var icon=data_json['events'][i]['icon']+i+".png";
+				var dateEvent = new Date();
+				var sec = data_json['events'][i]['start'];
+				dateEvent.setTime(sec * 1000);
+				var evt = new Timeline.DefaultEventSource.Event(dateEvent, dateEvent, dateEvent, dateEvent, true, //instant
+				data_json['events'][i]['title'], //text
+				data_json['events'][i]['description'], //description
+				data_json['events'][i]['image'], data_json['events'][i]['link'],icon);
+				eventSource.add(evt);
+				loadGoogleEvents(data_json['events'][i]['title']+" "+data_json['events'][i]['description'],icon);
+			}
+			
+			 bandInfos = [Timeline.createBandInfo({
+                trackGap: 0.2,
+                trackHeight: 1.5,
+                width: "85%",
+                intervalUnit: Timeline.DateTime.HOUR,
+                intervalPixels: 50,
+                eventSource: eventSource
+            }), Timeline.createBandInfo({
+                showEventText: false,
+                trackHeight: 0.5,
+                trackGap: 0.2,
+                width: "15%",
+                intervalUnit: Timeline.DateTime.DAY,
+                intervalPixels: 100,
+                eventSource: eventSource
+            })];
+            bandInfos[1].syncWith = 0;
+            bandInfos[1].highlight = true;
+            tl = Timeline.create(document.getElementById("timeline"), bandInfos, 0);
+		}
+            
+          
+        
+        function loadGoogleEventsParse(_json){
+        
+                var address = "";
+               
+			    for (var i in _json) {
+					for (var j = 0; j < _json[i].length; j++) {
+						if (i == "country") {
+							if (geocoder) {
+								var address = _json[i][j]["name"];
+								var imge = _json[i][j]["icon"];
+								geocoder.getLatLng(address, function(point){
+								
+									if (point) {
+										var ic = new GIcon(G_DEFAULT_ICON);
+										ic.image = imge;
+										markers.push(new GMarker(point, {
+											icon: ic
+										}));
+										mgr.addMarker(markers[markers.length - 1], 3);
+									}
+								});
+							}
+						}
+						if (i == "person") {
+							var imge = _json[i][j]["icon"];
+							var person = _json[i][j]["name"];
+							_html += "<img src=" + imge + "> " + person + "<br>";
+						}
+					}
+                }
+				document.getElementById("person").innerHTML = _html;
+            }
+			
+        function loadGoogleEvents(contenu,icon){
+        
+            var requette = new AjaxRequest("php/api_calais.php?text=" + contenu+"&icon="+icon, "loadGoogleEventsParse");
+			
+        }
+        
+		</script>
+	</head>
+	
+	<body onload="Init();" onunload="GUnload();">
+	<div id="options">
+		
+	</div>
+	<div id="timeline">
+		
+	</div>
+	<div id="googlemaps">
+		
+	</div>
+	<div id="person">
+		
+	</div>
+	<div id="affichage">
+		
+	</div>
+	
+	</body>
+</html>
