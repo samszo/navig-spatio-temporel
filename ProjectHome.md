@@ -1,0 +1,1 @@
+Extraire des données des lieux et des dates à partir d'un flux textuel (p.ex flux RSS) et les projeter sur un service de cartographie en ligne (p.ex. Google Maps) et un navigateur temporel (p.ex. MIT Timeline).
